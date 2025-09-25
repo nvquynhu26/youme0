@@ -1,10 +1,175 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <title>Trang web của tôi trên GitHub</title>
+    <meta charset="UTF-8">
+    <title>세계 GDP 변화 비교 2020-2025</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    <style>
+        body {
+            background: #111;
+            color: #eee;
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2 {
+            color: #82eefd;
+            text-shadow: 0 2px 4px #222;
+        }
+        .container {
+            max-width: 1400px;
+            margin: auto;
+            padding: 24px;
+        }
+        .search-bar {
+            margin: 24px 0;
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px #161616;
+        }
+        input[type="text"], select {
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+            margin-right: 12px;
+            font-size: 1em;
+            background: #333;
+            color: #eee;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #181818;
+            margin-top: 24px;
+        }
+        th, td {
+            padding: 8px 12px;
+            border-bottom: 2px solid #222;
+            text-align: right; /* 숫자 정렬 */
+        }
+        th {
+            background: #222;
+            text-align: center;
+        }
+        tr:hover {
+            background: #222;
+            transition: background 0.2s;
+        }
+        td:nth-child(1), td:nth-child(2), td:nth-child(8) {
+            text-align: left; /* 국가명, 대륙, 분류는 왼쪽 정렬 */
+        }
+        .stats {
+            margin-top: 32px;
+            padding: 16px;
+            background: #191970;
+            border-radius: 10px;
+        }
+        .top-countries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        .top-card {
+            flex: 1 0 200px;
+            background: linear-gradient(135deg, #23a6d5, #0abcf9, #2a2a72);
+            color: #fff;
+            border-radius: 18px;
+            padding: 18px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px #0abcf980;
+            text-align: center;
+        }
+        .chart-box {
+            background: #232b2b;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 16px #222;
+        }
+        #chart, #map {
+            max-width: 100%;
+        }
+        /* Custom glow animation */
+        .glow {
+            animation: glow 1.5s infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 10px #1de9b6, 0 0 20px #00bcd4; }
+            to { box-shadow: 0 0 20px #82eefd, 0 0 40px #00aaff; }
+        }
+    </style>
 </head>
 <body>
-    <h1>Chào mừng đến trang web của tôi!</h1>
-    <p>Đây là trang web đầu tiên của tôi trên GitHub Pages.</p>
-</body>
-</html>
+<div class="container">
+    <h1>🌎 세계 GDP 변화 비교 (2020-2025)</h1>
+    <p style="color: #ccc; font-size: 0.9em;">(데이터는 예시이며, 실제 데이터로 대체하여 사용해주세요.)</p>
+    <div class="chart-box glow">
+        <h2>전 세계 GDP 중위값 변화</h2>
+        <canvas id="chart"></canvas>
+    </div>
+
+    <div class="search-bar">
+        <label>대륙 선택 :</label>
+        <select id="continent-select">
+            <option value="전체">전체</option>
+            <option value="아시아">아시아</option>
+            <option value="유럽">유럽</option>
+            <option value="아프리카">아프리카</option>
+            <option value="오세아니아">오세아니아</option>
+            <option value="북아메리카">북아메리카</option>
+            <option value="남아메리카">남아메리카</option>
+        </select>
+        <input type="text" id="country-search" placeholder="국가명 검색...">
+    </div>
+
+    <h2>국가별 GDP 목록</h2>
+    <table id="gdp-table">
+        <thead>
+            <tr>
+                <th>국가명</th>
+                <th>대륙</th>
+                <th>2020</th>
+                <th>2021</th>
+                <th>2022</th>
+                <th>2023</th>
+                <th>2024</th>
+                <th>2025</th>
+                <th>분류</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <h2>💎 TOP 10 GDP 국가 (2025)</h2>
+    <div class="top-countries" id="top-10-high"></div>
+
+    <h2>🪨 GDP 최하위 10개국 (2025)</h2>
+    <div class="top-countries" id="top-10-low"></div>
+
+    <h2>세계 국가 통계</h2>
+    <div class="stats glow" id="stats-box">
+        </div>
+    <div class="chart-box">
+        <h2>세계 국가 지도 (2025)</h2>
+        <svg id="map" width="1000" height="420"></svg>
+        <div style="font-size:0.95em; margin-top:12px; color:#e0e0e0;">
+            <span style="color:#00e676;">■ 선진국</span> 
+            <span style="color:#ffd600;">■ 개발도상국</span>
+            <span style="color:#ff1744;">■ 저개발국</span>
+        </div>
+    </div>
+</div>
+
+<script>
+// ⭐ 1. GDP 데이터 정의 (배열에 직접 포함)
+// 실제 GDP 데이터를 여기에 넣어주세요. (단위: 백만 달러 등, 통일된 기준 필요)
+// 숫자는 문자열이 아닌 숫자로 입력하는 것이 좋습니다.
+const data = [
+    { "Country": "United States", "ISO3": "USA", "2020": 21060000, "2021": 23320000, "2022": 25440000, "2023": 26850000, "2024": 28000000, "2025": 29100000 },
+    { "Country": "China", "ISO3": "CHN", "2020": 14720000, "2021": 17730000, "2022": 17960000, "2023": 18530000, "2024": 19500000, "2025": 20500000 },
+    { "Country":
