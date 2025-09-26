@@ -80,7 +80,7 @@
         
         <!-- --- 1. GDP 막대 차트 영역 --- -->
         <h2 class="text-2xl font-bold mb-4 pt-4 border-t border-gray-700 neon-text-cyan">
-            대륙/국가별 GDP 순위 (조 달러)
+            GDP 대륙별/국가별
         </h2>
         <div id="chart-container" class="bg-gray-800 p-4 md:p-6 rounded-xl shadow-inner min-h-64 neon-glow border border-gray-700">
             <div id="chart-info" class="text-center text-lg font-semibold text-gray-400 mb-4">
@@ -91,9 +91,9 @@
             </div>
         </div>
         
-        <!-- --- 2. 세계 지도 시각화 영역 --- -->
+        <!-- --- 2. 세계 지도 시각화 영역 (GDP 히트맵) --- -->
         <h2 class="text-2xl font-bold mb-4 pt-8 border-t border-gray-700 mt-8 neon-text-cyan">
-            국가 발전 상태 지도
+            국가 GDP 규모 지도 (색상/크기 기반)
         </h2>
         <div id="world-map-container" class="bg-gray-800 p-4 md:p-6 rounded-xl shadow-inner min-h-64 neon-glow border border-gray-700 flex flex-col items-center">
             <div id="map-legend" class="mb-4 flex gap-4 text-sm font-semibold">
@@ -103,7 +103,7 @@
         </div>
         
         <p class="mt-8 text-xs text-gray-600 text-center">
-            * 이 데이터는 모의 데이터입니다. GDP 단위는 조 달러(Trillion USD)입니다. 지도 시각화는 단일 파일 구성을 위해 간소화된 지역 좌표를 사용했습니다.
+            * 이 데이터는 모의 데이터입니다. GDP 단위는 **조 달러(Trillion USD)** 기준이며, 소규모 국가는 더 정확한 비교를 위해 소수점 4자리까지 표시됩니다.
         </p>
     </div>
 
@@ -112,58 +112,76 @@
         const apiKey = "";
         
         // --- 1. 모의 데이터 설정 (GDP 및 발전 상태 추가) ---
+        // GDP 데이터는 2023년 또는 가장 최근 데이터를 기반으로 '조 달러(Trillion USD)' 단위로 변환되어 있습니다.
+        // (CSV 값 / 1,000,000 = 조 달러)
         const MOCK_GDP_DATA = [
-            // 아시아
+            // 아시아 (총 16개)
             { country: "중국", continent: "아시아", gdp: 17.7, status: "개발도상국", coords: [103.8, 30.0] },
             { country: "일본", continent: "아시아", gdp: 4.2, status: "선진국", coords: [138.0, 36.0] },
             { country: "인도", continent: "아시아", gdp: 3.7, status: "개발도상국", coords: [77.2, 20.6] },
             { country: "대한민국", continent: "아시아", gdp: 1.7, status: "선진국", coords: [127.8, 36.5] },
             { country: "인도네시아", continent: "아시아", gdp: 1.4, status: "개발도상국", coords: [113.9, -0.8] },
             { country: "사우디아라비아", continent: "아시아", gdp: 1.1, status: "개발도상국", coords: [45.0, 24.0] },
+            { country: "대만", continent: "아시아", gdp: 0.7573, status: "선진국", coords: [121.0, 23.5] },
+            { country: "태국", continent: "아시아", gdp: 0.5159, status: "개발도상국", coords: [100.0, 15.0] },
             { country: "베트남", continent: "아시아", gdp: 0.43, status: "개발도상국", coords: [108.2, 16.0] },
-
-            // 북미
+            { country: "아르메니아", continent: "아시아", gdp: 0.0159, status: "개발도상국", coords: [45.0, 40.0] },
+            { country: "아프가니스탄", continent: "아시아", gdp: 0.0172, status: "최빈국", coords: [67.7, 33.9] },
+            { country: "타지키스탄", continent: "아시아", gdp: 0.0119, status: "개발도상국", coords: [71.0, 39.0] },
+            { country: "티모르-레스트", continent: "아시아", gdp: 0.0021, status: "최빈국", coords: [125.7, -8.8] },
+            { country: "시리아", continent: "아시아", gdp: 0.020, status: "최빈국", coords: [38.0, 35.0] },
+            
+            // 북미 (총 5개)
             { country: "미국", continent: "북미", gdp: 27.9, status: "선진국", coords: [-98.5, 39.8] },
             { country: "캐나다", continent: "북미", gdp: 2.2, status: "선진국", coords: [-106.3, 56.1] },
             { country: "멕시코", continent: "북미", gdp: 1.8, status: "개발도상국", coords: [-102.0, 23.6] },
+            { country: "트리니다드 토바고", continent: "북미", gdp: 0.0242, status: "선진국", coords: [-61.2, 10.6] },
+            { country: "앤티가 바부다", continent: "북미", gdp: 0.0020, status: "선진국", coords: [-61.8, 17.0] },
             
-            // 유럽
+            // 유럽 (총 6개)
             { country: "독일", continent: "유럽", gdp: 4.5, status: "선진국", coords: [10.4, 51.2] },
             { country: "영국", continent: "유럽", gdp: 3.5, status: "선진국", coords: [-2.0, 55.4] },
             { country: "프랑스", continent: "유럽", gdp: 3.2, status: "선진국", coords: [2.3, 46.2] },
             { country: "이탈리아", continent: "유럽", gdp: 2.3, status: "선진국", coords: [12.5, 41.9] },
+            { country: "알바니아", continent: "유럽", gdp: 0.0234, status: "개발도상국", coords: [20.0, 41.0] },
+            { country: "안도라", continent: "유럽", gdp: 0.0038, status: "선진국", coords: [1.5, 42.5] },
             
-            // 남미
+            // 남미 (총 2개)
             { country: "브라질", continent: "남미", gdp: 2.1, status: "개발도상국", coords: [-51.9, -14.2] },
-            { country: "아르헨티나", continent: "남미", gdp: 0.63, status: "개발도상국", coords: [-63.6, -38.4] },
+            { country: "아르헨티나", continent: "남미", gdp: 0.6455, status: "개발도상국", coords: [-63.6, -38.4] },
             
-            // 아프리카
+            // 아프리카 (총 7개)
             { country: "나이지리아", continent: "아프리카", gdp: 0.55, status: "최빈국", coords: [8.0, 9.0] },
             { country: "남아프리카공화국", continent: "아프리카", gdp: 0.4, status: "개발도상국", coords: [22.9, -30.6] },
             { country: "이집트", continent: "아프리카", gdp: 0.35, status: "개발도상국", coords: [30.8, 26.8] },
+            { country: "알제리", continent: "아프리카", gdp: 0.2478, status: "개발도상국", coords: [2.0, 28.0] },
+            { country: "앙골라", continent: "아프리카", gdp: 0.1098, status: "개발도상국", coords: [17.0, -12.0] },
             { country: "에티오피아", continent: "아프리카", gdp: 0.15, status: "최빈국", coords: [39.0, 8.0] },
+            { country: "탄자니아", continent: "아프리카", gdp: 0.0791, status: "최빈국", coords: [34.0, -6.0] },
+            { country: "토고", continent: "아프리카", gdp: 0.0091, status: "최빈국", coords: [1.0, 8.0] },
             
-            // 오세아니아
+            // 오세아니아 (총 3개)
             { country: "호주", continent: "오세아니아", gdp: 1.7, status: "선진국", coords: [133.8, -25.3] },
             { country: "뉴질랜드", continent: "오세아니아", gdp: 0.28, status: "선진국", coords: [174.9, -40.9] },
+            { country: "통가", continent: "오세아니아", gdp: 0.00051, status: "개발도상국", coords: [-175.2, -20.0] },
         ];
         
-        // --- 2. 단순화된 GeoJSON 데이터 (단일 파일 구성을 위한 대륙 외곽선 모의 데이터) ---
+        // --- 2. 단순화된 GeoJSON 데이터 (단일 파일 구성을 위한 대륙 외곽선 모의 데이터 - 시각적 개선) ---
         const mockGeoJson = {
             type: "FeatureCollection",
             features: [
-                // 아시아
-                { type: "Feature", properties: { continent: "아시아" }, geometry: { type: "Polygon", coordinates: [[[40, 70], [150, 70], [150, -10], [40, -10], [40, 70]]] } },
-                // 유럽
-                { type: "Feature", properties: { continent: "유럽" }, geometry: { type: "Polygon", coordinates: [[[-20, 75], [50, 75], [50, 40], [10, 30], [-20, 55], [-20, 75]]] } },
-                // 북미
-                { type: "Feature", properties: { continent: "북미" }, geometry: { type: "Polygon", coordinates: [[[-170, 80], [-60, 80], [-60, 10], [-130, 20], [-170, 80]]] } },
-                // 남미
-                { type: "Feature", properties: { continent: "남미" }, geometry: { type: "Polygon", coordinates: [[[-85, 10], [-30, 0], [-50, -60], [-85, -50], [-85, 10]]] } },
-                // 아프리카
-                { type: "Feature", properties: { continent: "아프리카" }, geometry: { type: "Polygon", coordinates: [[[-20, 35], [50, 35], [50, -35], [10, -35], [-20, 35]]] } },
-                // 오세아니아
-                { type: "Feature", properties: { continent: "오세아니아" }, geometry: { type: "Polygon", coordinates: [[[100, 0], [160, 0], [160, -45], [100, -45], [100, 0]]] } },
+                // 아시아 (Asia)
+                { type: "Feature", properties: { continent: "아시아" }, geometry: { type: "Polygon", coordinates: [[[40, 70], [140, 70], [150, 50], [130, 0], [100, -10], [40, 0], [40, 70]]] } },
+                // 유럽 (Europe)
+                { type: "Feature", properties: { continent: "유럽" }, geometry: { type: "Polygon", coordinates: [[[-10, 60], [20, 75], [50, 70], [40, 45], [0, 40], [-10, 60]]] } },
+                // 북미 (North America)
+                { type: "Feature", properties: { continent: "북미" }, geometry: { type: "Polygon", coordinates: [[[-150, 70], [-70, 60], [-60, 20], [-100, 10], [-150, 40], [-150, 70]]] } },
+                // 남미 (South America)
+                { type: "Feature", properties: { continent: "남미" }, geometry: { type: "Polygon", coordinates: [[[-80, 10], [-40, 0], [-35, -30], [-70, -55], [-80, -30], [-80, 10]]] } },
+                // 아프리카 (Africa)
+                { type: "Feature", properties: { continent: "아프리카" }, geometry: { type: "Polygon", coordinates: [[[-15, 30], [20, 35], [50, 10], [45, -35], [10, -30], [-15, 0], [-15, 30]]] } },
+                // 오세아니아 (Oceania/Australia)
+                { type: "Feature", properties: { continent: "오세아니아" }, geometry: { type: "Polygon", coordinates: [[[110, -10], [150, -10], [150, -35], [130, -40], [110, -25], [110, -10]]] } },
             ]
         };
 
@@ -176,30 +194,26 @@
         const worldMapSvg = d3.select("#world-map");
         const mapWidth = 960, mapHeight = 500;
         
+        // GDP 범위 계산 (전체 데이터 기준)
+        const allGdpValues = MOCK_GDP_DATA.map(d => d.gdp);
+        const minGdp = Math.min(...allGdpValues);
+        const maxGdp = Math.max(...allGdpValues);
+        const GDP_COLOR_RANGE = ["#330055", "#00FFFF", "#FFFF00"]; // Dark Purple -> Cyan -> Yellow
+        
         let currentFilter = {
             continent: '전체 대륙',
             search: ''
         };
 
         // --- 3. 색상 및 스타일 상수 ---
-        const NEON_COLORS = {
-            // 대륙별 색상 (막대 차트용)
-            '아시아': '#FFD700', // Gold/Yellow Neon
-            '유럽': '#FF69B4', // Hot Pink Neon
-            '북미': '#00BFFF', // Deep Sky Blue Neon
-            '남미': '#32CD32', // Lime Green Neon
-            '아프리카': '#FFA500', // Orange Neon
-            '오세아니아': '#9932CC', // Dark Orchid Neon
-            
-            // 발전 상태 색상 (지도 점 시각화용) - 요청된 네온 톤 사용
-            '선진국': '#00FFFF', // Cyan Neon
-            '개발도상국': '#FF00FF', // Magenta Neon
-            '최빈국': '#00FF00', // Lime Neon
-        };
-        const STATUS_LEGEND = {
-            '선진국': NEON_COLORS['선진국'],
-            '개발도상국': NEON_COLORS['개발도상국'],
-            '최빈국': NEON_COLORS['최빈국']
+        // 대륙별 색상 (막대 차트용)
+        const NEON_CONTINENT_COLORS = { 
+            '아시아': '#FFD700', 
+            '유럽': '#FF69B4',
+            '북미': '#00BFFF',
+            '남미': '#32CD32',
+            '아프리카': '#FFA500',
+            '오세아니아': '#9932CC',
         };
 
         // --- 4. 초기화 함수 ---
@@ -268,15 +282,18 @@
             const barHeight = 35;
             const barSpacing = 10;
             const svgHeight = data.length * (barHeight + barSpacing) + 20;
-            const maxGdp = Math.max(...MOCK_GDP_DATA.map(d => d.gdp));
-            const scaleFactor = (chartWidth - 150) / maxGdp;
+            const scaleFactor = (chartWidth - 150) / maxGdp; // maxGdp는 전역 상수 사용
 
             let svgContent = `<svg viewBox="0 0 ${chartWidth} ${svgHeight}" width="100%" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg" class="select-none">`;
 
             data.forEach((d, index) => {
                 const y = index * (barHeight + barSpacing) + 10;
                 const barWidth = d.gdp * scaleFactor;
-                const color = NEON_COLORS[d.continent] || '#FFFFFF'; // 대륙별 네온 색상
+                const color = NEON_CONTINENT_COLORS[d.continent] || '#FFFFFF'; // 대륙별 네온 색상
+
+                // GDP 값 표시: 0.1조 달러 미만은 소수점 4자리까지 표시하여 정밀도 확보
+                const gdpDisplay = d.gdp < 0.1 ? d.gdp.toFixed(4) : d.gdp.toFixed(2);
+
 
                 // 막대 (Bar)
                 svgContent += `<rect 
@@ -303,7 +320,7 @@
                     text-anchor="start" 
                     class="bar-label font-medium" fill="${color}"
                 >
-                    ${d.gdp.toFixed(2)} 조 달러
+                    ${gdpDisplay} 조 달러
                 </text>`;
             });
 
@@ -312,7 +329,7 @@
             barChart.style.minWidth = `${chartWidth}px`;
         }
 
-        // --- 6. 세계 지도 렌더링 함수 (D3 사용) ---
+        // --- 6. 세계 지도 렌더링 함수 (D3 사용) - GDP 히트맵 스타일로 변경 ---
         function renderMap() {
             worldMapSvg.attr("width", mapWidth)
                        .attr("height", mapHeight)
@@ -329,80 +346,129 @@
             // 기존 지도 요소 제거
             worldMapSvg.selectAll('*').remove();
             
-            // 1. 대륙 외곽선 그리기 (GeoJSON 사용) - 지도의 윤곽선을 제공
+            // --- GDP 시각화를 위한 D3 스케일 설정 ---
+            
+            // 1. GDP 색상 스케일: 로그 스케일을 사용하여 큰 값의 편차에도 작은 값의 차이를 시각화합니다.
+            const gdpColorScale = d3.scaleLog()
+                .domain([minGdp, maxGdp])
+                .range([0, 1]) // 0부터 1까지의 범위
+                .clamp(true);
+
+            const colorInterpolator = d3.interpolateRgbBasis(GDP_COLOR_RANGE);
+
+            // 2. GDP 반지름 스케일: 점의 크기를 GDP에 비례하게 설정 (최소 7, 최대 35)
+            const gdpRadiusScale = d3.scaleLog()
+                .domain([minGdp, maxGdp])
+                .range([7, 35])
+                .clamp(true);
+                
+            // 1. 대륙 외곽선 그리기 (GeoJSON 사용) 
             worldMapSvg.selectAll("path.continent-border")
                 .data(mockGeoJson.features)
                 .enter().append("path")
                 .attr("class", "continent-border")
                 .attr("d", path)
                 .attr("fill", "#1F2937") 
-                .attr("stroke", NEON_COLORS['선진국']) 
-                .attr("stroke-width", 1.5); // 두께 개선
+                .attr("stroke", '#00FFFF') 
+                .attr("stroke-width", 1.5); 
 
 
-            // 2. 국가별 점 (Dot) 그리기 (발전 상태 색상 적용) - 요청에 따라 색상 구분
+            // 2. 국가별 점 (Dot) 그리기 (GDP 크기 및 색상 적용)
             worldMapSvg.selectAll("circle.country-dot")
                 .data(MOCK_GDP_DATA)
                 .enter().append("circle")
                 .attr("class", "country-dot")
                 .attr("cx", d => projection(d.coords)[0])
                 .attr("cy", d => projection(d.coords)[1])
-                .attr("r", 7)
-                .attr("fill", d => NEON_COLORS[d.status]) // 발전 상태에 따른 색상 적용
+                .attr("r", d => gdpRadiusScale(d.gdp)) // GDP에 비례하는 크기
+                .attr("fill", d => colorInterpolator(gdpColorScale(d.gdp))) // GDP에 따른 색상
                 .attr("stroke", "#FFFFFF")
                 .attr("stroke-width", 1.5)
                 .style("cursor", "pointer")
-                .style("filter", d => `drop-shadow(0 0 5px ${NEON_COLORS[d.status]})`)
+                .style("opacity", 0.7) // 투명도 추가
+                .style("filter", d => `drop-shadow(0 0 5px ${colorInterpolator(gdpColorScale(d.gdp))})`)
                 .on("mouseover", function(event, d) {
                     d3.select(this)
-                        .attr("r", 10)
-                        .attr("stroke-width", 2)
-                        .style("filter", d => `drop-shadow(0 0 15px ${NEON_COLORS[d.status]})`);
+                        .attr("r", d => gdpRadiusScale(d.gdp) + 5)
+                        .attr("stroke-width", 3)
+                        .style("opacity", 1)
+                        .style("filter", d => `drop-shadow(0 0 20px ${colorInterpolator(gdpColorScale(d.gdp))})`);
                     
+                    // GDP 값 표시: 0.1조 달러 미만은 소수점 4자리까지 표시
+                    const gdpDisplay = d.gdp < 0.1 ? d.gdp.toFixed(4) : d.gdp.toFixed(2);
+                    const countryColor = colorInterpolator(gdpColorScale(d.gdp));
+
                     // 툴팁 표시
                     worldMapSvg.append("text")
                         .attr("class", "country-label")
-                        .attr("x", projection(d.coords)[0] + 12)
+                        .attr("x", projection(d.coords)[0] + gdpRadiusScale(d.gdp) + 5)
                         .attr("y", projection(d.coords)[1] + 5)
-                        .attr("fill", NEON_COLORS[d.status])
+                        .attr("fill", countryColor)
                         .attr("font-size", "14px")
                         .attr("font-weight", "bold")
-                        .text(`${d.country} (${d.status})`);
+                        .text(`${d.country} (${d.status}) | GDP: ${gdpDisplay} T USD`);
                 })
                 .on("mouseout", function(event, d) {
                     d3.select(this)
-                        .attr("r", 7)
+                        .attr("r", d => gdpRadiusScale(d.gdp))
                         .attr("stroke-width", 1.5)
-                        .style("filter", d => `drop-shadow(0 0 5px ${NEON_COLORS[d.status]})`);
+                        .style("opacity", 0.7)
+                        .style("filter", d => `drop-shadow(0 0 5px ${colorInterpolator(gdpColorScale(d.gdp))})`);
                     
                     worldMapSvg.select(".country-label").remove();
                 });
         }
         
-        // --- 7. 지도 범례 렌더링 함수 ---
+        // --- 7. 지도 범례 렌더링 함수 (GDP 스케일로 변경) ---
         function renderMapLegend() {
             const legendContainer = document.getElementById('map-legend');
-            legendContainer.innerHTML = '';
+            
+            // Dữ liệu và thang màu được xác định ngoài hàm
+            const gdpColorScale = d3.scaleLog()
+                .domain([minGdp, maxGdp])
+                .range([0, 1])
+                .clamp(true);
 
-            Object.keys(STATUS_LEGEND).forEach(status => {
-                const color = STATUS_LEGEND[status];
-                const item = document.createElement('div');
-                item.className = 'flex items-center gap-2 px-3 py-1 rounded-full bg-gray-700 hover:bg-gray-600 transition duration-150';
-                
-                const dot = document.createElement('span');
-                dot.className = 'inline-block w-3 h-3 rounded-full';
-                dot.style.backgroundColor = color;
-                dot.style.boxShadow = `0 0 5px ${color}`;
+            const colorInterpolator = d3.interpolateRgbBasis(GDP_COLOR_RANGE);
 
-                const text = document.createElement('span');
-                text.className = 'font-medium text-sm';
-                text.style.color = color;
-                text.textContent = status;
+            legendContainer.innerHTML = `
+                <div class="flex flex-col md:flex-row items-start md:items-center gap-4 p-3 bg-gray-700/50 rounded-lg w-full">
+                    <!-- Tiêu đề thang màu GDP -->
+                    <div class="text-sm font-bold text-gray-300 flex-shrink-0">
+                        Quy mô GDP (Tỷ USD)
+                    </div>
+                    
+                    <!-- Thanh màu Gradient -->
+                    <div class="flex-grow h-4 rounded-full overflow-hidden" style="
+                        background: linear-gradient(to right, 
+                            ${colorInterpolator(gdpColorScale(minGdp))}, 
+                            ${colorInterpolator(gdpColorScale(minGdp * 10))},
+                            ${colorInterpolator(gdpColorScale(maxGdp * 0.01))},
+                            ${colorInterpolator(gdpColorScale(maxGdp * 0.1))},
+                            ${colorInterpolator(gdpColorScale(maxGdp))}
+                        );
+                        box-shadow: 0 0 5px #00FFFF;
+                    "></div>
+                    
+                    <!-- Nhãn GDP -->
+                    <div class="flex justify-between w-full md:w-auto md:flex-grow text-xs font-medium text-gray-400 mt-1 md:mt-0">
+                        <span>~${minGdp.toFixed(4)}</span>
+                        <span>~0.1</span>
+                        <span>~1.0</span>
+                        <span class="text-right">~${maxGdp.toFixed(2)}</span>
+                    </div>
 
-                item.appendChild(dot);
-                item.appendChild(text);
-                legendContainer.appendChild(item);
-            });
+                    <!-- Chỉ báo Kích thước -->
+                    <div class="flex items-center gap-2 border-t md:border-t-0 md:border-l border-gray-600 pt-2 md:pt-0 md:pl-4 text-xs flex-shrink-0">
+                        <span class="text-gray-400">Kích thước = Quy mô GDP:</span>
+                        <div class="flex items-end">
+                            <span class="w-3 h-3 rounded-full bg-gray-500 opacity-50 block mr-1" style="box-shadow: 0 0 3px #FFFFFF;"></span>
+                            <span class="w-6 h-6 rounded-full bg-gray-500 opacity-50 block mr-1" style="box-shadow: 0 0 3px #FFFFFF;"></span>
+                            <span class="w-8 h-8 rounded-full bg-gray-500 opacity-50 block" style="box-shadow: 0 0 3px #FFFFFF;"></span>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
 
