@@ -83,6 +83,17 @@
             box-shadow: 0 4px 20px #0abcf980;
             text-align: center;
         }
+        /* Class mới cho biểu đồ đường nhỏ gọn và căn giữa */
+        .small-line-chart-box {
+            background: #232b2b;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 30px auto; /* Căn giữa */
+            max-width: 700px; /* Giới hạn chiều rộng */
+            box-shadow: 0 4px 16px #222;
+        }
+        
+        /* Class chung cho chart box (chỉ áp dụng cho map) */
         .chart-box {
             background: #232b2b;
             border-radius: 16px;
@@ -90,53 +101,15 @@
             margin-bottom: 30px;
             box-shadow: 0 4px 16px #222;
         }
-        
-        /* Thay đổi để Treemap hiển thị gọn gàng */
-        .centered-chart-box {
-            background: #232b2b;
-            border-radius: 16px;
-            padding: 16px;
-            margin: 30px auto; /* Căn giữa */
-            max-width: 800px; /* Giới hạn chiều rộng */
-            box-shadow: 0 4px 16px #222;
-        }
 
-        /* Vùng chứa Treemap */
-        #treemap-container {
-            width: 100%;
-            height: 450px; /* Chiều cao cố định cho Treemap */
-            display: block;
-            position: relative;
-            margin-top: 10px;
-        }
-
-        /* Style cho Treemap của D3 */
-        .node {
-            border: 1px solid #111;
-            font-size: 10px;
-            text-align: center;
-            line-height: normal;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 3px;
-            box-sizing: border-box;
-            color: #fff;
-            text-shadow: 0 1px 1px #000;
-            cursor: pointer;
-        }
-        .node-label {
-            max-height: 100%;
-            overflow: hidden;
-        }
-
-
-        #chart, #map {
+        #chart {
             max-width: 100%;
-            height: 400px;
+            height: 350px; /* Giảm chiều cao cho biểu đồ đường gọn hơn */
         }
-
+        #map {
+            max-width: 100%;
+            height: 420px;
+        }
         /* Custom glow animation */
         .glow {
             animation: glow 1.5s infinite alternate;
@@ -164,12 +137,7 @@
     <h1>🌎 세계 GDP 변화 비교 (2020-2025)</h1>
     <p style="color: #ccc; font-size: 0.9em;">(데이터는 예시이며, 실제 데이터로 대체하여 사용해주세요.)</p>
     
-    <div class="centered-chart-box">
-        <h2>GDP Treemap (TOP 20 Quốc gia 2025)</h2>
-        <div id="treemap-container"></div>
-    </div>
-
-    <div class="chart-box glow">
+    <div class="small-line-chart-box glow">
         <h2>전 세계 GDP 중위값 변화</h2>
         <canvas id="chart"></canvas>
     </div>
@@ -230,8 +198,7 @@
 </div>
 
 <script>
-// ⭐ 1. GDP Dữ liệu (Để minh họa cho Treemap, tôi thêm một số dữ liệu mẫu)
-// Đơn vị: Triệu USD (giả định)
+// ⭐ 1. GDP Dữ liệu (Đã thêm nhiều quốc gia hơn để đảm bảo các phần khác hoạt động)
 const data = [
     { "Country": "United States", "ISO3": "USA", "2020": 21060000, "2021": 23320000, "2022": 25440000, "2023": 26850000, "2024": 28000000, "2025": 29100000 },
     { "Country": "China", "ISO3": "CHN", "2020": 14720000, "2021": 17730000, "2022": 17960000, "2023": 18530000, "2024": 19500000, "2025": 20500000 },
@@ -263,7 +230,6 @@ const data = [
     { "Country": "Liechtenstein", "ISO3": "LIE", "2020": 60000, "2021": 65000, "2022": 70000, "2023": 75000, "2024": 80000, "2025": 85000 },
 ];
 
-
 // Mảng chứa dữ liệu cần thiết cho D3.js Map
 const countryDataMap = new Map(data.map(d => [d.ISO3, { country: d.Country, gdp: d["2025"] }]));
 
@@ -288,20 +254,21 @@ const continentMap = {
 
 // Phân loại: GDP 2025 (Giả định: Triệu USD)
 function classifyCountry(gdp2025) {
-    if (gdp2025 >= 5000000) return '선진국'; // Developed
-    if (gdp2025 >= 500000) return '개발도상국'; // Developing
-    return '저개발국'; // Least Developed
+    if (gdp2025 >= 5000000) return '선진국'; // Phát triển (Developed)
+    if (gdp2025 >= 500000) return '개발도상국'; // Đang phát triển (Developing)
+    return '저개발국'; // Kém phát triển (Least Developed)
 }
 
+// Màu sắc cho bản đồ
 function getColorByClassification(classification) {
-    if (classification === '선진국') return "#00e676"; 
-    if (classification === '개발도상국') return "#ffd600";
-    if (classification === '저개발국') return "#ff1744";
-    return "#222";
+    if (classification === '선진국') return "#00e676"; // Xanh lá: Developed
+    if (classification === '개발도상국') return "#ffd600"; // Vàng: Developing
+    if (classification === '저개발국') return "#ff1744"; // Đỏ: Least Developed
+    return "#222"; // Đen/Xám: No Data
 }
 
 
-// Dịch sang tiếng Hàn/Việt
+// Dịch sang tiếng Hàn/Việt (Tên quốc gia và châu lục)
 const continentKR = {
     'Asia':'아시아', 'Europe':'유럽', 'Africa':'아프리카', 'North America':'북아메리카', 'South America':'남아메리카', 'Oceania':'오세아니아'
 };
@@ -320,84 +287,14 @@ function getContinent(country) {
 // GDP 포맷팅 함수 (Thêm dấu phẩy)
 function formatGDP(value) {
     if (value === undefined || value === null) return '-';
+    // Đảm bảo là số nguyên cho hiển thị sạch hơn
     return Math.round(Number(value)).toLocaleString('ko-KR');
 }
 
+// KHÔNG CÓ HÀM RENDER BIỂU ĐỒ THANH NGANG NỮA
+// KHÔNG CÓ CANVAS GPD-BAR-CHART TRONG HTML NỮA
 
-// 1. Treemap (SỬA ĐỔI)
-(function renderTreemap() {
-    const topN = 20; 
-    const sortedData = [...data]
-        .filter(d => d["2025"] !== undefined && d["2025"] !== null)
-        .sort((a, b) => b["2025"] - a["2025"]) 
-        .slice(0, topN);
-
-    // Chuẩn bị dữ liệu cho Treemap (D3.js yêu cầu định dạng phân cấp)
-    const treemapData = {
-        name: "World",
-        children: sortedData.map(d => ({ 
-            name: getCountryNameKR(d.Country), 
-            value: d["2025"],
-            classification: classifyCountry(d["2025"])
-        }))
-    };
-    
-    const container = document.getElementById('treemap-container');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    const root = d3.hierarchy(treemapData)
-        .sum(d => d.value)
-        .sort((a, b) => b.value - a.value); // Sắp xếp từ lớn đến nhỏ
-
-    const treemap = d3.treemap()
-        .size([width, height])
-        .padding(1);
-
-    treemap(root);
-
-    const colorScale = d3.scaleOrdinal()
-        .domain(treemapData.children.map(d => d.name))
-        .range(d3.schemeCategory10); // Màu mặc định cho mỗi quốc gia
-
-    d3.select(container)
-        .selectAll("div")
-        .data(root.leaves())
-        .join("div")
-        .attr("class", "node")
-        .style("left", d => d.x0 + "px")
-        .style("top", d => d.y0 + "px")
-        .style("width", d => d.x1 - d.x0 + "px")
-        .style("height", d => d.y1 - d.y0 + "px")
-        .style("background-color", d => colorScale(d.data.name))
-        .html(d => {
-            const countryName = d.data.name;
-            const gdp = formatGDP(d.data.value);
-            // Chỉ hiển thị tên nếu ô đủ lớn
-            if (d.x1 - d.x0 > 50 && d.y1 - d.y0 > 25) {
-                return `<span class="node-label">${countryName}<br>(${gdp})</span>`;
-            }
-            return ''; // Không hiển thị nếu quá nhỏ
-        })
-        .on("mouseover", function(event, d) {
-            d3.select(this).style("opacity", 0.8).style("border", "3px solid #fff");
-            tooltip.html(`<strong>${d.data.name}</strong><br>GDP 2025: ${formatGDP(d.data.value)} Triệu USD<br>Phân loại: ${d.data.classification}`)
-                .style("left", (event.pageX + 10) + "px")
-                .style("top", (event.pageY - 28) + "px")
-                .style("opacity", .9);
-        })
-        .on("mouseout", function() {
-            d3.select(this).style("opacity", 1).style("border", "1px solid #111");
-            tooltip.style("opacity", 0);
-        })
-        .on("mousemove", function(event) {
-            tooltip.style("left", (event.pageX + 10) + "px")
-                   .style("top", (event.pageY - 28) + "px");
-        });
-})();
-
-
-// Biểu đồ đường (Line Chart) (Giữ nguyên)
+// Biểu đồ đường (Line Chart)
 (function renderChart() {
     const years = ["2020","2021","2022","2023","2024","2025"];
     const medians = years.map(yr => {
@@ -444,7 +341,7 @@ function formatGDP(value) {
     });
 })();
 
-// Các hàm khác giữ nguyên
+// Hàm renderTable, renderTopCountries, getStatistics (Giữ nguyên logic)
 function renderTable(filterCont="전체", keyword="") {
     const tbody = document.querySelector("#gdp-table tbody");
     tbody.innerHTML = "";
@@ -473,6 +370,7 @@ function renderTable(filterCont="전체", keyword="") {
     });
 }
 
+// ... (Gắn sự kiện cho select và search) ...
 document.getElementById("continent-select").onchange = function() {
     renderTable(this.value, document.getElementById("country-search").value);
 };
@@ -518,7 +416,7 @@ document.getElementById("stats-box").innerHTML = `
     <strong>개발도상국 (Đang phát triển):</strong> ${stats.deving} <br>
     <strong>저개발국 (Kém phát triển):</strong> ${stats.poor}`;
 
-// 2. Bản đồ D3.js (Giữ nguyên)
+// 2. Bản đồ D3.js (D3.js World Map) (Giữ nguyên)
 const tooltip = d3.select("body").append("div") 
     .attr("class", "tooltip") 
     .style("opacity", 0);
