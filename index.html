@@ -1,512 +1,127 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>세계 GDP 변화 비교 2020-2025</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://d3js.org/topojson.v3.min.js"></script>
-    <style>
-        body {
-            background: #111;
-            color: #eee;
-            font-family: 'Noto Sans KR', sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        h1, h2 {
-            color: #82eefd;
-            text-shadow: 0 2px 4px #222;
-        }
-        .container {
-            max-width: 1400px;
-            margin: auto;
-            padding: 24px;
-        }
-        .search-bar {
-            margin: 24px 0;
-            background: #222;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 16px #161616;
-        }
-        input[type="text"], select {
-            padding: 8px;
-            border-radius: 4px;
-            border: none;
-            margin-right: 12px;
-            font-size: 1em;
-            background: #333;
-            color: #eee;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #181818;
-            margin-top: 24px;
-        }
-        th, td {
-            padding: 8px 12px;
-            border-bottom: 2px solid #222;
-            text-align: right;
-        }
-        th {
-            background: #222;
-            text-align: center;
-        }
-        tr:hover {
-            background: #222;
-            transition: background 0.2s;
-        }
-        td:nth-child(1), td:nth-child(2), td:nth-child(8) {
-            text-align: left;
-        }
-        .stats {
-            margin-top: 32px;
-            padding: 16px;
-            background: #191970;
-            border-radius: 10px;
-        }
-        .top-countries {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-        }
-        .top-card {
-            flex: 1 0 200px;
-            background: linear-gradient(135deg, #23a6d5, #0abcf9, #2a2a72);
-            color: #fff;
-            border-radius: 18px;
-            padding: 18px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 20px #0abcf980;
-            text-align: center;
-        }
-        .chart-box {
-            background: #232b2b;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 16px #222;
-        }
-        #chart, #gdp-bar-chart, #map {
-            max-width: 100%;
-            height: 400px; /* Thêm chiều cao cho biểu đồ */
-        }
-        /* Custom glow animation */
-        .glow {
-            animation: glow 1.5s infinite alternate;
-        }
-        @keyframes glow {
-            from { box-shadow: 0 0 10px #1de9b6, 0 0 20px #00bcd4; }
-            to { box-shadow: 0 0 20px #82eefd, 0 0 40px #00aaff; }
-        }
-        /* D3 Map Tooltip */
-        .tooltip {
-            position: absolute;
-            text-align: center;
-            padding: 8px;
-            font: 12px sans-serif;
-            background: #fff;
-            border: 0px;
-            border-radius: 8px;
-            pointer-events: none;
-            color: #111;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>2020-2025년 국가별 GDP 소득 변화</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', Arial, sans-serif; }
+    .search-box { margin-bottom: 15px; }
+    input[type="text"] { width: 250px; padding: 8px; }
+    label { font-weight: bold; margin-right: 10px; }
+  </style>
 </head>
 <body>
-<div class="container">
-    <h1>🌎 세계 GDP 변화 비교 (2020-2025)</h1>
-    <p style="color: #ccc; font-size: 0.9em;">(데이터는 예시이며, 실제 데이터로 대체하여 사용해주세요.)</p>
-    
-    <div class="chart-box">
-        <h2>GDP Toàn bộ Quốc gia (2025)</h2>
-        <canvas id="gdp-bar-chart"></canvas>
-    </div>
+  <h2>2020-2025년 국가별 GDP 소득 변화</h2>
+  <div class="search-box">
+    <label for="countrySearch">국가명 또는 지역 검색:</label>
+    <input type="text" id="countrySearch" placeholder="국가명/지역명을 입력하세요…">
+  </div>
+  <canvas id="gdpChart" width="1800" height="600"></canvas>
 
-    <div class="chart-box glow">
-        <h2>전 세계 GDP 중위값 변화</h2>
-        <canvas id="chart"></canvas>
-    </div>
+  <script>
+    // 국가명 한글 변환 예시 일부 추가 (실제 적용 시 전체 국가명 한글화 필요)
+    const countryKo = {
+      "Afghanistan": "아프가니스탄",
+      "Albania": "알바니아",
+      "Algeria": "알제리",
+      "South Korea": "대한민국",
+      "Vietnam": "베트남",
+      "China": "중국",
+      "Japan": "일본",
+      "United States": "미국",
+      // ... 나머지 국가들 한글화 필요
+    };
 
-    <div class="search-bar">
-        <label>대륙 선택 :</label>
-        <select id="continent-select">
-            <option value="전체">전체</option>
-            <option value="아시아">아시아</option>
-            <option value="유럽">유럽</option>
-            <option value="아프리카">아프리카</option>
-            <option value="오세아니아">오세아니아</option>
-            <option value="북아메리카">북아메리카</option>
-            <option value="남아메리카">남아메리카</option>
-        </select>
-        <input type="text" id="country-search" placeholder="국가명 검색...">
-    </div>
-    
-    <h2>국가별 GDP 목록</h2>
-    <table id="gdp-table">
-        <thead>
-            <tr>
-                <th>국가명</th>
-                <th>대륙</th>
-                <th>2020</th>
-                <th>2021</th>
-                <th>2022</th>
-                <th>2023</th>
-                <th>2024</th>
-                <th>2025</th>
-                <th>분류</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
+    // 원본 데이터 배열 (표본, 전체 데이터 입력 필요)
+    const gdpData = [
+      {Country: "Afghanistan", "2020":20136, "2021":14278, "2022":14501, "2023":17248, "2024":"", "2025":""},
+      {Country: "Albania", "2020":15271, "2021":18086, "2022":19185, "2023":23388, "2024":27259, "2025":28372},
+      {Country: "Algeria", "2020":164774, "2021":185850, "2022":225709, "2023":247789, "2024":264913, "2025":268885},
+      {Country: "South Korea", "2020":1744456, "2021":1942314, "2022":1799363, "2023":1839058, "2024":1869714, "2025":1790322},
+      {Country: "Vietnam", "2020":346310, "2021":370076, "2022":411068, "2023":433008, "2024":459472, "2025":490970},
+      {Country: "China", "2020":15103357, "2021":18190803, "2022":18307816, "2023":18270351, "2024":18748009, "2025":19231705},
+      {Country: "United States", "2020":21354125, "2021":23681175, "2022":26006900, "2023":27720725, "2024":29184900, "2025":30507217},
+      // ... 전체 데이터 입력
+    ];
 
-    <h2>💎 TOP 10 GDP 국가 (2025)</h2>
-    <div class="top-countries" id="top-10-high"></div>
-
-    <h2>🪨 GDP 최하위 10개국 (2025)</h2>
-    <div class="top-countries" id="top-10-low"></div>
-
-    <h2>세계 국가 통계</h2>
-    <div class="stats glow" id="stats-box">
-        </div>
-    
-    <div class="chart-box">
-        <h2>세계 국가 지도 (2025)</h2>
-        <svg id="map" width="1000" height="420"></svg>
-        <div style="font-size:0.95em; margin-top:12px; color:#e0e0e0;">
-            <span style="color:#00e676;">■ 선진국 (Phát triển)</span> 
-            <span style="color:#ffd600;">■ 개발도상국 (Đang phát triển)</span>
-            <span style="color:#ff1744;">■ 저개발국 (Kém phát triển)</span>
-            <span style="color:#222;">■ 미분류 (Chưa phân loại/Không có dữ liệu)</span>
-        </div>
-    </div>
-</div>
-
-<script>
-// ⭐ 1. GDP 데이터 정의 (Thêm ISO3 code cho bản đồ)
-// Đơn vị: Triệu USD (giả định)
-const data = [
-    { "Country": "United States", "ISO3": "USA", "2020": 21060000, "2021": 23320000, "2022": 25440000, "2023": 26850000, "2024": 28000000, "2025": 29100000 },
-    { "Country": "China", "ISO3": "CHN", "2020": 14720000, "2021": 17730000, "2022": 17960000, "2023": 18530000, "2024": 19500000, "2025": 20500000 },
-    { "Country": "Japan", "ISO3": "JPN", "2020": 5040000, "2021": 4940000, "2022": 4230000, "2023": 4410000, "2024": 4600000, "2025": 4800000 },
-    { "Country": "Germany", "ISO3": "DEU", "2020": 3840000, "2021": 4260000, "2022": 4080000, "2023": 4310000, "2024": 4500000, "2025": 4700000 },
-    { "Country": "South Korea", "ISO3": "KOR", "2020": 1640000, "2021": 1810000, "2022": 1730000, "2023": 1740000, "2024": 1780000, "2025": 1820000 },
-    { "Country": "Vietnam", "ISO3": "VNM", "2020": 346000, "2021": 372000, "2022": 409000, "2023": 433000, "2024": 460000, "2025": 490000 },
-    { "Country": "Nigeria", "ISO3": "NGA", "2020": 432000, "2021": 440000, "2022": 477000, "2023": 504000, "2024": 520000, "2025": 540000 },
-    { "Country": "Tuvalu", "ISO3": "TUV", "2020": 50, "2021": 55, "2022": 60, "2023": 65, "2024": 70, "2025": 75 },
-    { "Country": "Liechtenstein", "ISO3": "LIE", "2020": 60000, "2021": 65000, "2022": 70000, "2023": 75000, "2024": 80000, "2025": 85000 },
-    { "Country": "Brazil", "ISO3": "BRA", "2020": 1450000, "2021": 1610000, "2022": 1920000, "2023": 2100000, "2024": 2250000, "2025": 2400000 },
-    { "Country": "India", "ISO3": "IND", "2020": 2660000, "2021": 3150000, "2022": 3390000, "2023": 3750000, "2024": 4100000, "2025": 4450000 },
-    { "Country": "Chad", "ISO3": "TCD", "2020": 10000, "2021": 11000, "2022": 12000, "2023": 13000, "2024": 14000, "2025": 15000 },
-    // **Thêm nhiều quốc gia hơn tại đây**
-];
-
-// Mảng chứa dữ liệu cần thiết cho D3.js Map
-const countryDataMap = new Map(data.map(d => [d.ISO3, { country: d.Country, gdp: d["2025"] }]));
-
-// Mã hóa ISO 3166-1 Numeric sang ISO3 (Cần thiết cho World-Atlas V2)
-// Chỉ bao gồm các mã cho dữ liệu mẫu
-const isoNumericToISO3 = {
-    '840': 'USA', '156': 'CHN', '392': 'JPN', '276': 'DEU', '410': 'KOR', '704': 'VNM', 
-    '566': 'NGA', '798': 'TUV', '438': 'LIE', '076': 'BRA', '356': 'IND', '148': 'TCD'
-    // Thêm các mã khác nếu cần
-};
-
-
-// Ánh xạ châu lục và tên tiếng Hàn/Việt
-const continentMap = {
-    'Asia': ['South Korea', 'Japan', 'China', 'Vietnam', 'India'],
-    'Europe': ['Germany', 'Liechtenstein'],
-    'Africa': ['Nigeria', 'Chad'],
-    'Oceania': ['Tuvalu'],
-    'North America': ['United States'],
-    'South America': ['Brazil']
-};
-
-// Phân loại: GDP 2025 (Giả định: Triệu USD)
-function classifyCountry(gdp2025) {
-    if (gdp2025 >= 5000000) return '선진국'; // Phát triển (Developed)
-    if (gdp2025 >= 500000) return '개발도상국'; // Đang phát triển (Developing)
-    return '저개발국'; // Kém phát triển (Least Developed)
-}
-
-// Màu sắc cho bản đồ
-function getColorByClassification(classification) {
-    if (classification === '선진국') return "#00e676"; // Xanh lá: Developed
-    if (classification === '개발도상국') return "#ffd600"; // Vàng: Developing
-    if (classification === '저개발국') return "#ff1744"; // Đỏ: Least Developed
-    return "#222"; // Đen/Xám: No Data
-}
-
-
-// Dịch sang tiếng Hàn/Việt (Tên quốc gia và châu lục)
-const continentKR = {
-    'Asia':'아시아', 'Europe':'유럽', 'Africa':'아프리카', 'North America':'북아메리카', 'South America':'남아메리카', 'Oceania':'오세아니아'
-};
-const countryKR = {
-    'South Korea':'대한민국', 'Japan':'일본', 'Vietnam':'베트남', 'United States':'미국', 'China':'중국', 'Nigeria':'나이지리아', 'Germany':'독일', 'Liechtenstein':'리히텐슈타인', 'Tuvalu':'투발루', 'Brazil':'브라질', 'India':'인도', 'Chad':'차드'
-};
-function getCountryNameKR(country) { return countryKR[country] || country; }
-
-function getContinent(country) {
-    for (const [cont, arr] of Object.entries(continentMap)) {
-        if (arr.includes(country)) return continentKR[cont];
+    // Chart.js에 입력할 데이터 포맷 가공
+    function makeDatasets(filtered) {
+      return filtered.map(item => ({
+        label: countryKo[item.Country] || item.Country,
+        data: [
+          item["2020"] || null,
+          item["2021"] || null,
+          item["2022"] || null,
+          item["2023"] || null,
+          item["2024"] || null,
+          item["2025"] || null
+        ],
+        borderWidth: 2,
+        borderColor: 'rgba(' + Math.floor(Math.random()*256) + ',' 
+                              + Math.floor(Math.random()*256) + ',' 
+                              + Math.floor(Math.random()*256) + ',1)',
+        fill: false,
+        spanGaps: true,
+      }));
     }
-    return '미분류';
-}
 
-// GDP 포맷팅 함수 (Thêm dấu phẩy)
-function formatGDP(value) {
-    if (value === undefined || value === null) return '-';
-    // Đảm bảo là số nguyên cho hiển thị sạch hơn
-    return Math.round(Number(value)).toLocaleString('ko-KR');
-}
-
-// 1. Biểu đồ thanh ngang (Horizontal Bar Chart)
-(function renderBarChart() {
-    const sortedData = [...data].filter(d => d["2025"] !== undefined && d["2025"] !== null).sort((a, b) => a["2025"] - b["2025"]);
-    const countries = sortedData.map(d => getCountryNameKR(d.Country));
-    const gdpValues = sortedData.map(d => d["2025"]);
-    
-    const ctx = document.getElementById('gdp-bar-chart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: countries,
-            datasets: [{
-                label: 'GDP 2025 (Triệu USD)',
-                data: gdpValues,
-                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
+    const years = ["2020", "2021", "2022", "2023", "2024", "2025"];
+    const chartCtx = document.getElementById('gdpChart').getContext('2d');
+    let chartInstance = new Chart(chartCtx, {
+      type: 'line',
+      data: {
+        labels: years,
+        datasets: makeDatasets(gdpData),
+      },
+      options: {
+        responsive: false,
+        plugins: {
+          legend: {
+            display: false // 초기 범례 감춤
+          },
+          tooltip: {
+            callbacks: {
+              title: (context) => context[0].dataset.label
+            }
+          }
         },
-        options: {
-            indexAxis: 'y', // Biểu đồ thanh ngang
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#82eefd', font: {size:14} }},
-                tooltip: { 
-                    callbacks: { 
-                        label: function(context) { 
-                            let label = context.label || '';
-                            if (label) label += ': ';
-                            if (context.parsed.x !== null) label += formatGDP(context.parsed.x);
-                            return label;
-                        },
-                        // Hiển thị tên quốc gia khi hover
-                        title: function(context) {
-                             return 'Quốc gia: ' + context[0].label;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: { 
-                    ticks: {
-                        color: '#76c7ff', 
-                        callback: function(value) { return formatGDP(value); } // Định dạng số
-                    }, 
-                    grid: {color:'#222'} 
-                },
-                y: { ticks: {color: '#76c7ff'} }
-            }
-        }
-    });
-})();
-
-
-// Biểu đồ đường (Line Chart)
-(function renderChart() {
-    const years = ["2020","2021","2022","2023","2024","2025"];
-    const medians = years.map(yr => {
-        const arr = data.map(row => Number(row[yr] || 0)).filter(n=>n>0);
-        arr.sort((a,b)=>a-b);
-        if (arr.length === 0) return 0;
-        const mid = Math.floor(arr.length/2);
-        return arr.length%2 === 0 ? (arr[mid-1]+arr[mid])/2 : arr[mid];
-    });
-    
-    const ctx = document.getElementById('chart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: years.map(yr=>yr+'년'),
-            datasets: [{
-                label: '중위값 GDP (Triệu USD)',
-                data: medians,
-                borderColor: '#00e5ff',
-                backgroundColor: 'rgba(65,222,190,0.3)',
-                pointBackgroundColor: '#ff6e40',
-                pointBorderColor: '#fff',
-                lineTension: 0.25,
-                pointRadius: 6
-            }]
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#82eefd', font: {size:14} }},
-                tooltip: { callbacks: { label: function(context) { 
-                    let label = context.dataset.label || '';
-                    if (label) label += ': ';
-                    if (context.parsed.y !== null) label += formatGDP(context.parsed.y);
-                    return label;
-                }}}
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: '연도'
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'GDP 소득(US 달러)'
             },
-            scales: {
-                x: { ticks: {color: '#76c7ff'} },
-                y: { ticks: {color: '#76c7ff', callback: function(value) { return formatGDP(value); }}, grid: {color:'#222'} }
-            }
+            beginAtZero: true
+          }
         }
+      }
     });
-})();
 
-// Hàm renderTable, renderTopCountries, getStatistics không thay đổi nhiều
-function renderTable(filterCont="전체", keyword="") {
-    // ... (Code renderTable giữ nguyên) ...
-    const tbody = document.querySelector("#gdp-table tbody");
-    tbody.innerHTML = "";
-    data.forEach(row => {
-        const continent = getContinent(row.Country);
-        const nameKR = getCountryNameKR(row.Country);
-        if (
-            (filterCont === "전체" || continent === filterCont) &&
-            (keyword === "" || nameKR.includes(keyword) || row.Country.includes(keyword))
-        ) {
-            const gdp2025 = Number(row["2025"]);
-            const type = classifyCountry(gdp2025);
-            tbody.innerHTML += `
-                <tr>
-                    <td>${nameKR}</td>
-                    <td>${continent}</td>
-                    <td>${formatGDP(row["2020"])}</td>
-                    <td>${formatGDP(row["2021"])}</td>
-                    <td>${formatGDP(row["2022"])}</td>
-                    <td>${formatGDP(row["2023"])}</td>
-                    <td>${formatGDP(row["2024"])}</td>
-                    <td>${formatGDP(row["2025"])}</td>
-                    <td>${type}</td>
-                </tr>`;
-        }
-    });
-}
-
-// ... (Gắn sự kiện cho select và search) ...
-document.getElementById("continent-select").onchange = function() {
-    renderTable(this.value, document.getElementById("country-search").value);
-};
-document.getElementById("country-search").oninput = function() {
-    renderTable(document.getElementById("continent-select").value, this.value);
-};
-renderTable();
-
-function renderTopCountries() {
-    const sorted = [...data].filter(d=>d["2025"] !== undefined && d["2025"] !== null).sort((a,b)=>b["2025"]-a["2025"]);
-    const top10 = sorted.slice(0,10);
-    const bot10 = sorted.length > 10 ? sorted.slice(-10) : sorted.slice(0).reverse(); 
-
-    document.getElementById("top-10-high").innerHTML = top10.map(e=>{
-        const nameKR = getCountryNameKR(e.Country);
-        return `<div class="top-card">${nameKR}<br><span style="font-size:1.3em;">${formatGDP(e["2025"])}</span></div>`;
-    }).join('');
-    document.getElementById("top-10-low").innerHTML = bot10.map(e=>{
-        const nameKR = getCountryNameKR(e.Country);
-        return `<div class="top-card">${nameKR}<br><span style="font-size:1.3em;">${formatGDP(e["2025"])}</span></div>`;
-    }).join('');
-}
-renderTopCountries();
-
-function getStatistics() {
-    let total = data.length;
-    let dev=0, deving=0, poor=0;
-    data.forEach(c=>{
-        const gdp2025 = Number(c["2025"]);
-        if (gdp2025) { 
-            const t=classifyCountry(gdp2025);
-            if(t==='선진국')dev++;
-            else if(t==='개발도상국')deving++;
-            else poor++;
-        }
-    });
-    return {total,dev,deving,poor};
-}
-const stats = getStatistics();
-document.getElementById("stats-box").innerHTML = `
-    <strong>전체 국가 수 (데이터 기준):</strong> ${stats.total} <br>
-    <strong>선진국 (Phát triển):</strong> ${stats.dev} <br>
-    <strong>개발도상국 (Đang phát triển):</strong> ${stats.deving} <br>
-    <strong>저개발국 (Kém phát triển):</strong> ${stats.poor}`;
-
-// 2. Bản đồ D3.js (D3.js World Map)
-// Thêm Tooltip cho bản đồ
-const tooltip = d3.select("body").append("div") 
-    .attr("class", "tooltip")                 
-    .style("opacity", 0);
-
-d3.json("https://unpkg.com/world-atlas@2.0.2/countries-50m.json").then(world=>{
-    const svg = d3.select("#map");
-    const width = 1000;
-    const height = 420;
-    // Tỷ lệ và dịch chuyển để phù hợp hơn với kích thước
-    const projection = d3.geoMercator().scale(150).translate([width / 2, height / 1.5]);
-    const path = d3.geoPath().projection(projection);
-
-    svg.attr("width", width)
-       .attr("height", height);
-
-    svg.append("g")
-        .selectAll("path")
-        .data(topojson.feature(world, world.objects.countries).features)
-        .join("path")
-        .attr("d", path)
-        .attr("fill", d => {
-            const iso3 = isoNumericToISO3[d.id];
-            if (iso3 && countryDataMap.has(iso3)) {
-                const gdp2025 = countryDataMap.get(iso3).gdp;
-                const classification = classifyCountry(gdp2025);
-                return getColorByClassification(classification);
-            }
-            return "#222"; // Quốc gia không có trong dữ liệu
-        })
-        .attr("stroke", "#1de9b6")
-        .attr("stroke-width", "0.5px")
-        .attr("opacity", 0.8)
-        .on("mouseover", function(event, d) {
-            d3.select(this).attr("opacity", 1).attr("stroke-width", "2px").attr("stroke", "#fff");
-            
-            const iso3 = isoNumericToISO3[d.id];
-            let name = d.properties.name || "Không rõ";
-            let gdpInfo = "Không có dữ liệu GDP";
-            let classificationInfo = "Chưa phân loại";
-
-            if (iso3 && countryDataMap.has(iso3)) {
-                const data = countryDataMap.get(iso3);
-                name = getCountryNameKR(data.country);
-                gdpInfo = "GDP 2025: " + formatGDP(data.gdp);
-                classificationInfo = classifyCountry(data.gdp);
-            }
-
-            tooltip.html(`<strong>${name}</strong><br>${gdpInfo}<br>Phân loại: ${classificationInfo}`)
-                .style("left", (event.pageX + 10) + "px")
-                .style("top", (event.pageY - 28) + "px")
-                .style("opacity", .9);
-        })
-        .on("mouseout", function() {
-            d3.select(this).attr("opacity", .8).attr("stroke-width", "0.5px").attr("stroke", "#1de9b6");
-            tooltip.style("opacity", 0);
-        })
-        .on("mousemove", function(event) {
-            tooltip.style("left", (event.pageX + 10) + "px")
-                   .style("top", (event.pageY - 28) + "px");
+    // 검색 기능 추가
+    document.getElementById('countrySearch').addEventListener('input', function() {
+      const q = this.value.trim();
+      let filtered = gdpData;
+      if(q) {
+        filtered = gdpData.filter(item => {
+          const koName = countryKo[item.Country] || item.Country;
+          return koName.includes(q) || item.Country.toLowerCase().includes(q.toLowerCase());
         });
-});
-</script>
+      }
+      chartInstance.data.datasets = makeDatasets(filtered);
+      chartInstance.update();
+    });
+  </script>
 </body>
 </html>
